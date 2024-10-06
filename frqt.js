@@ -67,8 +67,8 @@ async function compare(img, images) {
 /**
  * Compares two faces and returns a promise that resolves with a random value.
  *
- * @param {Object} face1 - The first face to compare.
- * @param {Object} face2 - The second face to compare.
+ * @param {string} face1 - The first face to compare.
+ * @param {string} face2 - The second face to compare.
  * @returns {Promise<number>} A promise that resolves with a random number.
  */
 async function recognizeFace(face1, face2) {
@@ -91,7 +91,7 @@ async function downscaleImage(image, size) {
   return await sharp(image).resize({ width: size }).toBuffer();
 }
 
-async function createChart(results, sizes) {
+async function createChart(results) {
   const orderedResults = new Map();
   results.forEach(({ size, score }) => {
     orderedResults.set(size, [...(orderedResults.get(size) || []), score]);
@@ -131,7 +131,7 @@ try {
   const images = await initImages(testdataPath);
   await cacheImages(images, cachePath, sizes);
   const results = await runAllComparisons(cachePath);
-  createChart(results.flat(), sizes);
+  createChart(results.flat());
 } finally {
   await clearCache(cachePath);
 }
