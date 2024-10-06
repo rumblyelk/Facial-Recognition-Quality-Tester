@@ -122,8 +122,27 @@ async function createChart(results) {
   console.log(url);
 }
 
-const testdataPath = path.resolve(process.cwd(), process.argv[2]);
-const sizes = JSON.parse(process.argv[3]);
+let testdataPath;
+let sizes;
+
+try {
+  if (process.argv.length < 4) {
+    throw new Error(
+      "Insufficient arguments. Usage: node frqt.js <testdataPath> <sizes>"
+    );
+  }
+
+  testdataPath = path.resolve(process.cwd(), process.argv[2]);
+  await fs.access(testdataPath);
+  sizes = JSON.parse(process.argv[3]);
+
+  if (!Array.isArray(sizes) || sizes.some(isNaN)) {
+    throw new Error("Sizes argument must be a JSON array of numbers.");
+  }
+} catch (error) {
+  console.error("Error parsing arguments:", error.message);
+  process.exit(1);
+}
 const dirs = xdg();
 const cachePath = path.resolve(dirs.cache, "downscaled-images-for-comparison");
 
