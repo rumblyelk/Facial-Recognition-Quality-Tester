@@ -3,7 +3,6 @@ import sharp from "sharp";
 import path from "path";
 import xdg from "@folder/xdg";
 import crypto from "crypto";
-import { fileURLToPath } from "url";
 
 async function initImages(basePath) {
   const dirs = await fs.readdir(basePath);
@@ -92,29 +91,35 @@ async function downscaleImage(image, size) {
   return await sharp(image).resize({ width: size }).toBuffer();
 }
 
-async function createChart(results) {
-  // TODO: finish this API call to create a graph
-  // example: https://quickchart.io/chart?c={type:'bar',data:{labels:[2012,2013,2014,2015, 2016],datasets:[{label:'Users',data:[120,60,50,180,120]}]}}
-
-  const oderedResults = new Map();
-  results.forEach((res) => {
-    oderedResults.set(res.size, [...res.score]);
+async function createChart(results, sizes) {
+  const orderedResults = new Map();
+  results.forEach(({ size, score }) => {
+    orderedResults.set(size, [...(orderedResults.get(size) || []), score]);
   });
 
-  console.log(oderedResults);
+  const labels = [...orderedResults.keys()];
+  const data = [...orderedResults.values()].map(
+    (vals) => vals.reduce((c, n) => c + n, 0) / vals.length
+  );
 
   const config = {
     type: "bar",
     data: {
-      labels: [2012, 2013, 2014, 2015, 2016],
+      labels: labels,
       datasets: [
         {
-          label: "Users",
-          data: [120, 60, 50, 180, 120],
+          label: "Confidence in facial recognition",
+          data: data,
         },
       ],
     },
   };
+
+  const url = `https://quickchart.io/chart?c=${encodeURIComponent(
+    JSON.stringify(config)
+  )}`;
+  console.log("Comparisons completed.\nYour chart is available here:");
+  console.log(url);
 }
 
 const testdataPath = path.resolve(process.cwd(), process.argv[2]);
@@ -126,9 +131,7 @@ try {
   const images = await initImages(testdataPath);
   await cacheImages(images, cachePath, sizes);
   const results = await runAllComparisons(cachePath);
-  // createChart(results);
-
-  console.log(results.flat());
+  createChart(results.flat(), sizes);
 } finally {
   await clearCache(cachePath);
 }
